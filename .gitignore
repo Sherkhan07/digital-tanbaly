@@ -1,0 +1,5 @@
+# Only the website is published
+*.docx
+*.jpeg
+.claude/
+.DS_Store

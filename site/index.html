@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digital Tańbaly — Таңбалы тас</title>
+<meta name="description" content="Таңбалы тас — Іле өзені бойындағы тарихи-мәдени ескерткіштің 3D цифрлық музейі.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  --bg:#7a4a32; --bg2:#87563c; --panel:rgba(104,62,42,.85); --line:rgba(232,196,128,.18);
+  --gold:#e8c480; --gold2:#f6dfae; --ember:#d98a3d; --text:#ffffff; --muted:#f3eee8; --sky:#7fb6c9;
+  --serif:"Cormorant Garamond",Georgia,serif; --sans:"Inter",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;overflow-x:hidden}
+.stage{overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;line-height:1.65;overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:var(--gold)}
+#scene{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block}
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(0,0,0,.3) 100%)}
+main{position:relative;z-index:2}
+
+/* nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:18px clamp(16px,4vw,48px);transition:background .4s, backdrop-filter .4s}
+nav.solid{background:rgba(122,74,50,.72);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.logo{font-family:var(--serif);font-size:22px;font-weight:700;letter-spacing:.06em;color:var(--gold2);text-decoration:none;display:flex;gap:10px;align-items:center}
+.logo svg{width:30px;height:30px}
+.links{display:flex;gap:22px;list-style:none}
+.links a{color:var(--muted);text-decoration:none;font-size:13px;letter-spacing:.12em;text-transform:uppercase;transition:color .2s}
+.links a:hover{color:var(--gold2)}
+.burger{display:none;background:none;border:1px solid var(--line);color:var(--gold);border-radius:8px;padding:6px 10px;font-size:18px;cursor:pointer}
+
+/* hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 clamp(16px,5vw,72px) 9vh;pointer-events:none}
+.hero h1{font-family:var(--serif);font-weight:700;font-size:clamp(54px,11vw,156px);line-height:.88;letter-spacing:.02em;color:var(--gold2);text-shadow:0 0 40px rgba(232,170,90,.35),0 4px 30px rgba(0,0,0,.8)}
+.hero .eyebrow{font-size:13px;letter-spacing:.35em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.hero p.lead{max-width:560px;margin-top:22px;font-size:clamp(15px,1.4vw,18px);color:#ffffff;text-shadow:0 2px 12px #000}
+.hero .cta{display:flex;gap:14px;margin-top:28px;flex-wrap:wrap;pointer-events:auto}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 24px;border-radius:999px;border:1px solid var(--gold);color:var(--bg);background:linear-gradient(135deg,var(--gold2),var(--ember));font-weight:500;text-decoration:none;font-size:14px;letter-spacing:.04em;cursor:pointer;transition:transform .2s, box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(217,138,61,.35)}
+.btn.ghost{background:rgba(0,0,0,.35);color:var(--gold2);backdrop-filter:blur(6px)}
+.hint{position:absolute;right:clamp(16px,4vw,48px);bottom:9vh;font-size:12px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;text-align:right;text-shadow:0 2px 8px #000}
+.hint b{color:var(--gold);font-weight:500}
+.scrolldown{width:22px;height:36px;border:1.5px solid var(--gold);border-radius:12px;margin:10px 0 0 auto;position:relative}
+.scrolldown::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;border-radius:2px;background:var(--gold);transform:translateX(-50%);animation:sd 1.6s infinite}
+@keyframes sd{0%{opacity:0;transform:translate(-50%,0)}40%{opacity:1}100%{opacity:0;transform:translate(-50%,12px)}}
+
+/* hotspots */
+#hotspots{position:fixed;inset:0;z-index:3;pointer-events:none;transition:opacity .4s}
+.hs{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:1.5px solid var(--gold2);background:rgba(232,196,128,.18);cursor:pointer;pointer-events:auto;display:grid;place-items:center;color:var(--gold2);font-size:12px;font-weight:600;backdrop-filter:blur(2px)}
+.hs::before{content:"";position:absolute;inset:-8px;border-radius:50%;border:1px solid var(--gold);animation:pulse 2.2s infinite}
+@keyframes pulse{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.hs span{position:absolute;left:38px;white-space:nowrap;font-size:12px;letter-spacing:.08em;background:rgba(122,74,50,.8);border:1px solid var(--line);padding:4px 10px;border-radius:6px;opacity:0;transform:translateX(-6px);transition:.25s;pointer-events:none}
+.hs:hover span{opacity:1;transform:none}
+#info{position:fixed;z-index:30;right:clamp(16px,3vw,40px);top:96px;width:min(380px,calc(100vw - 32px));background:var(--panel);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:18px;padding:24px;transform:translateX(120%);transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+#info.open{transform:none}
+#info h3{font-family:var(--serif);font-size:30px;color:var(--gold2);line-height:1.1;margin-bottom:6px}
+#info .tag{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+#info p{font-size:14px;color:#ddd1bf;margin-top:12px}
+#info .x{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+
+/* sections */
+section.block{position:relative;padding:clamp(80px,12vh,140px) clamp(16px,5vw,72px);background:linear-gradient(180deg,rgba(122,74,50,.0) 0%,rgba(122,74,50,.88) 14%,rgba(122,74,50,.92) 86%,rgba(122,74,50,.0) 100%)}
+section.solid{background:var(--bg)}
+.wrap{max-width:1200px;margin:0 auto}
+.kicker{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--ember);margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.kicker::before{content:"";width:34px;height:1px;background:var(--ember)}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(36px,5.2vw,68px);line-height:1.02;color:var(--gold2);margin-bottom:22px}
+.sub{max-width:720px;color:var(--muted);font-size:16px}
+.grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,4vw,64px);align-items:center}
+.prose p{margin-bottom:16px;color:#ddd2c1}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:48px}
+.stat{background:rgba(112,68,46,.95);padding:26px 22px}
+.stat b{display:block;font-family:var(--serif);font-size:44px;line-height:1;color:var(--gold2)}
+.stat small{color:var(--muted);font-size:13px}
+.frame{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.frame img{width:100%;height:100%;object-fit:cover}
+.frame figcaption{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;font-size:12px;color:#ffffff;background:linear-gradient(transparent,rgba(0,0,0,.8))}
+
+/* tilt cards */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px;perspective:1200px}
+.card{position:relative;border-radius:20px;overflow:hidden;background:#87563c;border:1px solid var(--line);transform-style:preserve-3d;transition:transform .15s ease-out, box-shadow .3s;min-height:440px;display:flex;flex-direction:column}
+.card:hover{box-shadow:0 30px 70px rgba(0,0,0,.6),0 0 0 1px rgba(232,196,128,.35)}
+.card .ph{height:220px;background-size:cover;background-position:center;position:relative}
+.card .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,#87563c)}
+.card .body{padding:22px 24px 26px;transform:translateZ(40px)}
+.card .num{position:absolute;top:16px;left:18px;z-index:2;font-family:var(--serif);font-size:15px;color:var(--gold2);border:1px solid var(--gold);border-radius:999px;padding:2px 12px;background:rgba(0,0,0,.4);transform:translateZ(60px)}
+.card h3{font-family:var(--serif);font-size:30px;color:var(--gold2);line-height:1.1}
+.card .role{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);margin:4px 0 12px}
+.card p{font-size:14px;color:#d8ccb9}
+.card .glare{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,230,180,.16),transparent 45%);opacity:0;transition:opacity .3s}
+.card:hover .glare{opacity:1}
+
+/* inscriptions */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px}
+.duo .frame{aspect-ratio:3/2}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--gold2);background:rgba(232,196,128,.06)}
+
+/* timeline */
+.timeline{position:relative;margin-top:48px;padding-left:34px}
+.timeline::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:1px;background:linear-gradient(var(--gold),transparent)}
+.tl{position:relative;margin-bottom:28px}
+.tl::before{content:"";position:absolute;left:-31px;top:8px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--gold)}
+.tl.big::before{background:var(--gold);box-shadow:0 0 18px var(--gold)}
+.tl b{font-family:var(--serif);font-size:26px;color:var(--gold2);margin-right:10px}
+.tl span{color:#ddd1bf}
+.quote{font-family:var(--serif);font-size:clamp(24px,2.6vw,34px);line-height:1.25;color:var(--gold2);border-left:2px solid var(--ember);padding-left:24px;font-style:italic}
+.quote small{display:block;font-family:var(--sans);font-style:normal;font-size:13px;color:var(--muted);margin-top:14px}
+
+/* 3d carousel */
+.stage{height:520px;perspective:1400px;position:relative;margin-top:30px;cursor:grab;touch-action:pan-y;user-select:none}
+.stage:active{cursor:grabbing}
+.ring{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
+.slide{position:absolute;width:320px;height:220px;left:-160px;top:-110px;border-radius:14px;overflow:hidden;border:1px solid rgba(232,196,128,.35);background:#000;box-shadow:0 20px 50px rgba(0,0,0,.6);backface-visibility:hidden;cursor:pointer}
+.slide img{width:100%;height:100%;object-fit:cover;pointer-events:none}
+.slide figcaption{position:absolute;bottom:0;left:0;right:0;padding:10px 12px;font-size:12px;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff}
+.stage-floor{position:absolute;left:10%;right:10%;bottom:20px;height:60px;background:radial-gradient(ellipse at center,rgba(232,170,90,.25),transparent 70%);filter:blur(8px)}
+.ctrl{display:flex;justify-content:center;gap:12px;margin-top:8px}
+.ctrl button{width:46px;height:46px;border-radius:50%;border:1px solid var(--gold);background:rgba(0,0,0,.4);color:var(--gold2);font-size:18px;cursor:pointer}
+#lightbox{position:fixed;inset:0;z-index:50;background:rgba(56,32,22,.92);display:none;align-items:center;justify-content:center;padding:24px;flex-direction:column;gap:14px}
+#lightbox.open{display:flex}
+#lightbox img{max-height:80vh;border-radius:12px;border:1px solid var(--line)}
+#lightbox p{color:var(--muted);font-size:14px;text-align:center}
+
+/* digital model */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:36px}
+.flow .step{padding:14px 18px;border-radius:12px;border:1px solid var(--line);background:rgba(232,196,128,.05);font-size:13px;letter-spacing:.06em;color:var(--gold2);text-transform:uppercase;transition:.3s}
+.flow .step.on{background:linear-gradient(135deg,rgba(246,223,174,.25),rgba(217,138,61,.25));border-color:var(--gold);box-shadow:0 0 30px rgba(232,170,90,.25)}
+.flow .arr{color:var(--ember)}
+.passport{margin-top:48px;display:grid;grid-template-columns:.9fr 1.1fr;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:linear-gradient(135deg,#87563c,#6a3f2a)}
+.passport .pimg{min-height:340px;background:url(img/sun-head.jpg) center/cover;position:relative}
+.passport .pimg .qr{position:absolute;right:16px;bottom:16px;width:84px;height:84px;background:#f6dfae;border-radius:8px;padding:6px}
+.passport .pdata{padding:28px 30px}
+.passport .id{font-family:ui-monospace,Menlo,monospace;color:var(--ember);letter-spacing:.15em;font-size:13px}
+.passport h3{font-family:var(--serif);font-size:32px;color:var(--gold2);margin:4px 0 16px}
+.passport dl{display:grid;grid-template-columns:150px 1fr;gap:8px 16px;font-size:14px}
+.passport dt{color:var(--muted)}
+.passport dd{color:#e9dfcf}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.feat{border:1px solid var(--line);border-radius:16px;padding:22px;background:rgba(255,255,255,.02);transition:.3s}
+.feat:hover{border-color:rgba(232,196,128,.5);transform:translateY(-4px)}
+.feat i{font-style:normal;font-size:26px}
+.feat h4{font-family:var(--serif);font-size:23px;color:var(--gold2);margin:8px 0 6px}
+.feat p{font-size:13.5px;color:var(--muted)}
+
+/* concept */
+.concept{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:260px 260px;gap:18px;margin-top:40px}
+.concept .frame:first-child{grid-row:span 2}
+.badge{display:inline-block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--bg);background:var(--gold);padding:3px 10px;border-radius:999px;margin-bottom:6px}
+
+/* location */
+.loc{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:36px}
+.mapcard{border:1px solid var(--line);border-radius:18px;padding:26px;background:rgba(255,255,255,.02)}
+.mapcard svg{width:100%;height:auto}
+footer{position:relative;z-index:2;background:#5e3826;border-top:1px solid var(--line);padding:48px clamp(16px,5vw,72px);color:var(--muted);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
+footer b{color:var(--gold2);font-weight:500}
+
+/* archive */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin:32px 0 26px}
+.filters button{padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--muted);font:inherit;font-size:13px;cursor:pointer;transition:.2s}
+.filters button.on,.filters button:hover{border-color:var(--gold);color:var(--gold2);background:rgba(232,196,128,.1)}
+.filters b{font-weight:500;color:var(--ember);margin-left:6px}
+.arch{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.ac{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#84533a;cursor:pointer;transition:transform .3s,border-color .3s,opacity .3s;text-align:left;color:inherit;font:inherit;padding:0}
+.ac:hover{transform:translateY(-5px);border-color:rgba(232,196,128,.5)}
+.ac img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.ac div{padding:14px 16px}
+.ac code{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ember);letter-spacing:.1em}
+.ac h4{font-family:var(--serif);font-size:21px;color:var(--gold2);line-height:1.15;margin-top:2px}
+.ac small{color:var(--muted);font-size:12px}
+#pmodal{position:fixed;inset:0;z-index:60;background:rgba(56,32,22,.88);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+#pmodal.open{display:flex}
+.pbox{position:relative;width:min(900px,100%);max-height:92vh;overflow:auto;display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg,#87563c,#6a3f2a)}
+.pbox .x{position:absolute;top:10px;right:14px;z-index:2;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:50%;width:34px;height:34px;color:var(--gold2);font-size:20px;cursor:pointer}
+.pimg2 img{width:100%;height:100%;object-fit:cover;min-height:300px}
+.pdata2{padding:26px 28px}
+.pdata2 .id{font-family:ui-monospace,Menlo,monospace;color:var(--ember);letter-spacing:.15em;font-size:12px}
+.pdata2 h3{font-family:var(--serif);font-size:30px;color:var(--gold2);line-height:1.1;margin:4px 0 14px}
+.pdata2 dl{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;font-size:13.5px}
+.pdata2 dt{color:var(--muted)}.pdata2 dd{color:#e9dfcf}
+.pdata2 p{font-size:14px;color:#d8ccb9;margin-top:14px}
+/* lab */
+.labgrid{display:grid;grid-template-columns:320px 1fr;gap:28px;margin-top:40px;align-items:start}
+.labctl{border:1px solid var(--line);border-radius:18px;padding:22px;background:rgba(104,62,42,.9)}
+.lbl{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ember);margin:16px 0 10px}
+.lbl:first-child{margin-top:0}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:2px solid transparent;cursor:pointer;opacity:.7;transition:.2s}
+.thumbs img.on,.thumbs img:hover{border-color:var(--gold);opacity:1}
+.upload{display:block;margin-top:12px;text-align:center;padding:10px;border:1px dashed var(--gold);border-radius:10px;color:var(--gold2);font-size:13px;cursor:pointer}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modes button{padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.modes button.on{border-color:var(--gold);background:rgba(232,196,128,.14);color:var(--gold2)}
+input[type=range]{width:100%;accent-color:var(--ember)}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+.cmp{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#000;user-select:none;touch-action:none;cursor:ew-resize;line-height:0}
+.cmp canvas{width:100%;height:auto;display:block}
+.cmp-before{position:absolute;inset:0;clip-path:inset(0 50% 0 0)}
+.cmp-handle{position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--gold2);transform:translateX(-1px)}
+.cmp-handle span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:var(--gold2);color:var(--bg);display:grid;place-items:center;font-size:18px;line-height:1;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.cmp-tag{position:absolute;top:12px;font-size:11px;letter-spacing:.15em;text-transform:uppercase;background:rgba(0,0,0,.6);color:var(--gold2);padding:4px 10px;border-radius:999px;line-height:1.4}
+.cmp-tag.l{left:12px}.cmp-tag.r{right:12px}
+#map{height:340px;border-radius:12px;overflow:hidden;background:#87563c}
+.leaflet-container{font-family:var(--sans)!important;background:#87563c!important}
+.osm-dark{filter:invert(1) hue-rotate(180deg) brightness(.8) sepia(.35) saturate(.8)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#1c140e!important;color:var(--text)!important;border:1px solid var(--line)}
+.leaflet-popup-content b{color:var(--gold2)}
+.pin{width:18px;height:18px;border-radius:50%;background:var(--gold);border:3px solid #fff3d6;box-shadow:0 0 0 6px rgba(232,196,128,.3),0 0 20px var(--gold)}
+.pin.s{background:#b5a690;box-shadow:none;width:12px;height:12px;border-width:2px}
+
+.reveal{opacity:0;transform:translateY(40px);transition:opacity 1s, transform 1s cubic-bezier(.2,.8,.2,1)}
+.reveal.in{opacity:1;transform:none}
+
+#loader{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;transition:opacity .8s}
+#loader.done{opacity:0;pointer-events:none}
+#loader div{font-family:var(--serif);color:var(--gold2);font-size:28px;letter-spacing:.2em;text-align:center}
+#loader small{display:block;font-family:var(--sans);font-size:12px;color:var(--muted);letter-spacing:.3em;margin-top:10px}
+
+@media (max-width:900px){
+  .links{display:none;position:absolute;top:64px;right:16px;flex-direction:column;background:rgba(122,74,50,.95);border:1px solid var(--line);border-radius:14px;padding:18px 22px;gap:14px}
+  .links.open{display:flex}
+  .burger{display:block}
+  .grid2,.duo,.loc,.passport{grid-template-columns:1fr}
+  .cards,.features{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .concept{grid-template-columns:1fr;grid-template-rows:auto}
+  .concept .frame{aspect-ratio:16/9}
+  .concept .frame:first-child{grid-row:auto}
+  .hint{display:none}
+  .stage{height:400px}
+  .slide{width:220px;height:150px;left:-110px;top:-75px}
+  .passport dl{grid-template-columns:1fr}
+  .arch{grid-template-columns:repeat(2,1fr);gap:12px}
+  .ac h4{font-size:18px}
+  .pbox{grid-template-columns:1fr}
+  .pdata2 dl{grid-template-columns:1fr}
+  .labgrid{grid-template-columns:1fr}
+  #map{height:280px}
+  .passport dt{margin-top:6px}
+}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<div id="loader"><div>ТАҢБАЛЫ ТАС<small>3D ЖАРТАС ЖҮКТЕЛУДЕ…</small></div></div>
+<canvas id="scene"></canvas>
+<div id="vignette"></div>
+<div id="hotspots"></div>
+<aside id="info"><button class="x" aria-label="Жабу">×</button><div class="tag"></div><h3></h3><p></p></aside>
+
+<nav id="nav">
+  <a class="logo" href="#top"><svg viewBox="0 0 40 40" fill="none" stroke="#e8c480" stroke-width="2"><path d="M3 32 L15 12 L21 21 L26 15 L37 32 Z"/><circle cx="29" cy="9" r="3.2"/></svg>Digital Tańbaly</a>
+  <button class="burger" aria-label="Мәзір">☰</button>
+  <ul class="links">
+    <li><a href="#about">Тарихы</a></li>
+    <li><a href="#burkhans">Бейнелер</a></li>
+    <li><a href="#script">Жазулар</a></li>
+    <li><a href="#research">Зерттелуі</a></li>
+    <li><a href="#gallery">3D галерея</a></li>
+    <li><a href="#digital">Цифрлық мұра</a></li>
+    <li><a href="#archive">Архив</a></li>
+    <li><a href="#lab">Зертхана</a></li>
+  </ul>
+</nav>
+
+<main id="top">
+  <header class="hero">
+    <div class="eyebrow">Іле өзені · Қонаев · Алматы облысы</div>
+    <h1>ТАҢБАЛЫ<br>ТАС</h1>
+    <p class="lead">Өткеннің тасқа қашалған жады — болашақтың цифрлық құндылығы. Жартасқа қашалған Будда бейнелері мен көне жазуларды үш өлшемде зерттеңіз.</p>
+    <div class="cta">
+      <a class="btn" href="#about">Саяхатты бастау →</a>
+      <button class="btn ghost" id="torchBtn">🔦 Шамды жағу</button>
+    </div>
+    <div class="hint"><b>Тартыңыз</b> — жартасты айналдыру<br><b>Нүктелер</b> — бейнелер туралы<div class="scrolldown"></div></div>
+  </header>
+
+  <!-- ABOUT -->
+  <section class="block" id="about">
+    <div class="wrap">
+      <div class="grid2">
+        <div class="reveal">
+          <div class="kicker">1-бөлім · Таңбалы тарихы</div>
+          <h2>Іле жағасындағы киелі жартас</h2>
+          <div class="prose">
+            <p><b>Таңбалы тас</b> — Алматы облысындағы Қонаев қаласына (бұрынғы Қапшағай) жақын, Іле өзенінің оң жағалауында орналасқан тарихи-мәдени ескерткіш. Ол Қапшағай су қоймасынан солтүстік-батысқа қарай шамамен 25 шақырым жерде.</p>
+            <p>Биіктігі 60 метрге дейін жететін тік жартастардың бетіне Будда мен бурхандардың (бодхисаттвалардың) бейнелері және тибет, ойрат тілдеріндегі діни жазулар шеберлікпен қашалған. Бұл ескерткіш XVII ғасырдағы Жоңғар дәуірінің мәдениеті мен буддизм тарихын зерттеуде маңызды орын алады.</p>
+          </div>
+        </div>
+        <figure class="frame reveal" style="aspect-ratio:4/3"><img src="img/ili-gorge.jpg" alt="Таңбалы шатқалы және Іле өзені"><figcaption>Таңбалы шатқалынан Іле өзеніне көрініс</figcaption></figure>
+      </div>
+      <div class="stats reveal">
+        <div class="stat"><b data-count="1856">0</b><small>Ш. Уәлиханов зерттеді</small></div>
+        <div class="stat"><b>XVII</b><small>ғасыр · Жоңғар дәуірі</small></div>
+        <div class="stat"><b data-count="60">0</b><small>метрге дейінгі жартастар</small></div>
+        <div class="stat"><b data-count="25">0</b><small>км · Қапшағай су қоймасынан</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BURKHANS -->
+  <section class="block" id="burkhans">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="kicker">2-бөлім · Жартастағы бейнелер</div>
+        <h2>Тасқа қашалған үш бейне</h2>
+        <p class="sub">Жартастың тегіс бетіне ойып түсірілген бейнелер айқын стильмен сызылып, контур сызықтарының көркемдігімен ерекшеленеді.</p>
+      </div>
+      <div class="cards">
+        <article class="card reveal"><div class="num">01</div><div class="ph" style="background-image:url(img/buddha-close.jpg)"></div><div class="body"><h3>Шакьямуни</h3><div class="role">Будда · ілімнің негізін салушы</div><p>Буддизмнің негізін қалаушы Будда. Таңбалыда ол нұр шеңберінің ішінде, лотос үстінде аяғын айқастырып отырған қалпында бейнеленген.</p></div><div class="glare"></div></article>
+        <article class="card reveal"><div class="num">02</div><div class="ph" style="background-image:url(img/buddha-wall.jpg);background-position:55% 40%"></div><div class="body"><h3>Авалокитешвара</h3><div class="role">Бодхисаттва · мейірім иесі</div><p>Мейірім мен жанашырлықтың бейнесі. Жартастағы үлкен композицияның ортасында көп қолды бодхисаттва ретінде қашалған.</p></div><div class="glare"></div></article>
+        <article class="card reveal"><div class="num">03</div><div class="ph" style="background-image:url(img/buddha-wall.jpg);background-position:95% 40%"></div><div class="body"><h3>Манла</h3><div class="role">Емші Будда · сауығу символы</div><p>Емдеу мен денсаулықтың қамқоршысы саналған Будда. Оның бейнесі адамдардың сауығуға деген сенімін білдіреді.</p></div><div class="glare"></div></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCRIPT -->
+  <section class="block" id="script">
+    <div class="wrap">
+      <div class="grid2">
+        <div class="reveal">
+          <div class="kicker">3-бөлім · Көне жазулар</div>
+          <h2>Тастағы дұғалар</h2>
+          <div class="prose">
+            <p>Таңбалы тастарында <b>тибет</b> және <b>ойрат</b> тілдеріндегі діни жазулар кездеседі. Жазулар түрлі стильде орындалған — олар бейнелердің астында немесе қасында орналасып, композицияны толықтырады.</p>
+            <p>Өкінішке қарай, туризмнің қарқындауымен кей жерлерде ежелгі мәтіндердің дәл үстіне қазіргі заманғы жазулар түсірілген. Сондықтан ескерткіш кешенді қорғауды және цифрлық көшірмені қажет етеді.</p>
+          </div>
+          <div class="chips"><span class="chip">Тибет жазуы</span><span class="chip">Ойрат жазуы</span><span class="chip">Діни мәтіндер</span><span class="chip">Петроглифтер</span></div>
+        </div>
+        <div class="duo reveal" style="margin-top:0">
+          <figure class="frame"><img src="img/tibet-script.jpg" alt="Тибет жазуы"><figcaption>Тибет жазуы</figcaption></figure>
+          <figure class="frame"><img src="img/ancient-script.jpg" alt="Жартастағы көне жазу"><figcaption>Жартастағы көне жазу</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESEARCH -->
+  <section class="block" id="research">
+    <div class="wrap grid2">
+      <div class="reveal">
+        <div class="kicker">4-бөлім · Зерттелуі</div>
+        <h2>Шоқан Уәлиханов және ізбасарлары</h2>
+        <p class="quote">1856 жылы қазақтың ұлы ғалымы Шоқан Уәлиханов осы ескерткішті зерттеп, бейнелерін қағазға түсірген.<small>Ғылыми зерттеудің бастауы</small></p>
+      </div>
+      <div class="timeline reveal">
+        <div class="tl big"><b>1856</b><span>Ш.Ш. Уәлиханов — алғашқы сипаттама мен суреттер</span></div>
+        <div class="tl"><b>1877</b><span>К.А. Ларионов</span></div>
+        <div class="tl"><b>1896–98</b><span>А.М. Позднеев, Н.Н. Пантусов — жазуларды түсіндіру</span></div>
+        <div class="tl"><b>1898</b><span>Ф.В. Поярков</span></div>
+        <div class="tl"><b>XX ғ.</b><span>Ә.Х. Марғұлан, И.В. Ерофеева, Ф.П. Григорьев, А.Е. Рогожинский</span></div>
+        <div class="tl"><b>2008–10</b><span>А.Е. Рогожинский, И.В. Ерофеева, Б.Ж. Әубәкіров және шетелдік ғалымдар</span></div>
+        <div class="tl big"><b>2026</b><span>«Digital Tańbaly» — цифрлық сақтау жобасы</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="block" id="gallery">
+    <div class="wrap">
+      <div class="reveal" style="text-align:center">
+        <div class="kicker" style="justify-content:center">5-бөлім · 3D цифрлық галерея</div>
+        <h2>Жартас пен өзен</h2>
+        <p class="sub" style="margin:0 auto">Галереяны тышқанмен немесе саусақпен айналдырыңыз. Суретті басып, үлкейтіп көріңіз.</p>
+      </div>
+      <div class="stage" id="stage"><div class="stage-floor"></div><div class="ring" id="ring"></div></div>
+      <div class="ctrl"><button id="prev" aria-label="Алдыңғы">←</button><button id="next" aria-label="Келесі">→</button></div>
+    </div>
+  </section>
+
+  <!-- DIGITAL -->
+  <section class="block" id="digital">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="kicker">6-бөлім · Digital Tańbaly</div>
+        <h2>Өткеннен болашаққа: цифрлық мұра моделі</h2>
+        <p class="sub">Әрбір петроглиф фотосуретке түсіріліп, координатасы белгіленеді, санатқа бөлінеді және жеке цифрлық идентификатор алады. Жасанды интеллект бейнелерді жүйелеуге көмектеседі, ал соңғы ғылыми қорытындыны зерттеуші жасайды.</p>
+      </div>
+      <div class="flow reveal" id="flow">
+        <div class="step">Петроглиф</div><span class="arr">→</span>
+        <div class="step">Цифрлық тіркеу</div><span class="arr">→</span>
+        <div class="step">Деректер базасы</div><span class="arr">→</span>
+        <div class="step">ЖИ арқылы тану</div><span class="arr">→</span>
+        <div class="step">3D / карта</div><span class="arr">→</span>
+        <div class="step">Цифрлық мұра</div>
+      </div>
+
+      <div class="passport reveal">
+        <div class="pimg"><svg class="qr" viewBox="0 0 21 21" shape-rendering="crispEdges" id="qr"></svg></div>
+        <div class="pdata">
+          <div class="id">ЦИФРЛЫҚ ПАСПОРТ · TMG-PET-001</div>
+          <h3>Петроглифтің цифрлық карточкасы</h3>
+          <dl>
+            <dt>Орналасуы</dt><dd>Таңбалы тас, Алматы облысы, Қазақстан</dd>
+            <dt>GPS (WGS 84)</dt><dd>44.061240, 76.998028</dd>
+            <dt>Бейне түрі</dt><dd>Антропоморфтық / символдық</dd>
+            <dt>Композициясы</dt><dd>Орталық фигура + қосымша элементтер</dd>
+            <dt>Сақтау форматы</dt><dd>Фото: TIFF/JPEG · 3D: OBJ/PLY · Дерек: JSON</dd>
+            <dt>Ұқсас бейнелер</dt><dd>TMG-PET-002, TMG-PET-015</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="features">
+        <div class="feat reveal"><i>🗺️</i><h4>Петроглифтер картасы</h4><p>Бейнелердің орналасуын интерактивті карта арқылы көрсету.</p></div>
+        <div class="feat reveal"><i>🤖</i><h4>Петроглифті таны</h4><p>Пайдаланушы суретті жүктейді, жүйе оның қай санатқа жатуы мүмкін екенін ұсынады.</p></div>
+        <div class="feat reveal"><i>🗄️</i><h4>Цифрлық архив</h4><p>Фотосуреттер мен ғылыми сипаттамалар сақталатын дерекқор.</p></div>
+        <div class="feat reveal"><i>🧊</i><h4>3D Таңбалы</h4><p>Фотограмметрия арқылы жартас бетінің үшөлшемді модельдері.</p></div>
+        <div class="feat reveal"><i>🥽</i><h4>Виртуалды экскурсия</h4><p>360° панорама және VR арқылы тарихи орынды қашықтан аралау.</p></div>
+        <div class="feat reveal"><i>📱</i><h4>QR-код жүйесі</h4><p>Әр петроглифтің жанындағы код цифрлық каталогтағы параққа апарады.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHIVE -->
+  <section class="block" id="archive">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="kicker">Цифрлық архив</div>
+        <h2>Петроглифтер каталогы</h2>
+        <p class="sub">Әр нысанның жеке цифрлық идентификаторы мен паспорты бар. Санат бойынша сүзіп, карточканы ашыңыз.</p>
+      </div>
+      <div class="filters reveal" id="filters"></div>
+      <div class="arch" id="arch"></div>
+    </div>
+  </section>
+
+  <!-- LAB -->
+  <section class="block" id="lab">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="kicker">Цифрлық өңдеу зертханасы</div>
+        <h2>Көрінбейтін сызықтарды аша білу</h2>
+        <p class="sub">Мүжілген петроглифтердің контурын анықтау үшін зерттеушілер суретті цифрлық өңдейді. Суретті таңдаңыз немесе өзіңіздің фотоңызды жүктеңіз, сосын сүзгіні қолданып, «дейін / кейін» жолағын жылжытыңыз. Сурет тек сіздің браузеріңізде өңделеді, ешқайда жіберілмейді.</p>
+      </div>
+      <div class="labgrid reveal">
+        <div class="labctl">
+          <label class="lbl">Үлгі сурет</label>
+          <div class="thumbs" id="thumbs"></div>
+          <label class="upload">📷 Өз суретіңізді жүктеу<input type="file" accept="image/*" id="upl" hidden></label>
+          <label class="lbl">Сүзгі</label>
+          <div class="modes" id="modes">
+            <button data-m="contrast" class="on">Контраст</button>
+            <button data-m="dstretch">Түс күшейту</button>
+            <button data-m="edges">Сызықтарды табу</button>
+            <button data-m="relief">Рельеф</button>
+          </div>
+          <label class="lbl">Күші: <span id="strV">60</span>%</label>
+          <input type="range" id="str" min="0" max="100" value="60">
+          <p class="note" id="labNote">Контраст — жарық пен көлеңке айырмашылығын күшейтіп, ойылған сызықтарды айқындайды.</p>
+        </div>
+        <div class="cmp" id="cmp">
+          <canvas id="cAfter"></canvas>
+          <div class="cmp-before" id="cmpB"><canvas id="cBefore"></canvas></div>
+          <div class="cmp-handle" id="cmpH"><span>⇆</span></div>
+          <div class="cmp-tag l">Дейін</div><div class="cmp-tag r">Кейін</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONCEPT -->
+  <section class="block" id="future">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="kicker">7-бөлім · Digital Future</div>
+        <h2>Болашақтағы Digital Tamgaly кешені</h2>
+        <p class="sub">Виртуалды музей, туристік саябақ және қонақ үйден тұратын кешеннің концепт-визуализациясы. Мұндағы технологиялар: 3D модельдеу, VR, AR, QR-код, ЖИ-гид, интерактивті экрандар және 360° панорама.</p>
+      </div>
+      <div class="concept">
+        <figure class="frame reveal"><img src="img/museum.jpg" alt="Digital Tamgaly музейі"><figcaption><span class="badge">Концепт</span><br>Digital Tamgaly музейі</figcaption></figure>
+        <figure class="frame reveal"><img src="img/park.jpg" alt="Digital Tamgaly паркі"><figcaption><span class="badge">Концепт</span><br>Тарихи саябақ</figcaption></figure>
+        <figure class="frame reveal"><img src="img/hotel.jpg" alt="Digital Tamgaly қонақ үйі"><figcaption><span class="badge">Концепт</span><br>Қонақ үй</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOCATION -->
+  <section class="block" id="where">
+    <div class="wrap">
+      <div class="kicker">Қалай баруға болады</div>
+      <h2>Орналасқан жері</h2>
+      <div class="loc">
+        <div class="mapcard reveal"><div id="map"></div></div>
+        <div class="reveal prose">
+          <p><b>Мекенжайы:</b> Алматы облысы, Қонаев қаласының маңы, Іле өзенінің оң жағалауы.</p>
+          <p><b>Координаталар:</b> 44.061240° N, 76.998028° E</p>
+          <p><b>Ескерткішті қорғайық:</b> жартастарға жазу жазбаңыз, бейнелерді ұстамаңыз және өрмелемеңіз. Әрбір сызат — қайтып келмейтін тарих.</p>
+          <a class="btn" href="https://2gis.kz/almaty/geo/70030076195354323/76.998028,44.061240" target="_blank" rel="noopener">2GIS картасында ашу ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>Digital Tańbaly</b> — «Таңбалы тас: өткеннің мұрасы – болашақтың цифрлық құндылығы» ғылыми жобасы<br>Алматы қ., Алатау ауданы, № 180 мектеп-гимназия · 2026</div>
+    <div>Орындаған: <b>Амангельдықызы Айару</b>, 9 «Д» сынып<br>Ғылыми жетекшісі: Б.М. Абикенова · Ғылыми кеңесшісі: Р.Р. Оспанова</div>
+  </div>
+</footer>
+
+<div id="lightbox"><img alt=""><p></p></div>
+<div id="pmodal"><div class="pbox"><button class="x" aria-label="Жабу">×</button><div class="pimg2"></div><div class="pdata2"></div></div></div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ---------- noise ---------- */
+const P = new Uint8Array(512); { const p=[...Array(256).keys()]; let s=7; for(let i=255;i>0;i--){ s=(s*16807)%2147483647; const j=s%(i+1); [p[i],p[j]]=[p[j],p[i]]; } for(let i=0;i<512;i++) P[i]=p[i&255]; }
+const fade=t=>t*t*t*(t*(t*6-15)+10), lerp=(a,b,t)=>a+t*(b-a);
+function grad(h,x,y,z){const u=h<8?x:y,v=h<4?y:(h===12||h===14?x:z);return((h&1)?-u:u)+((h&2)?-v:v);}
+function noise(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);const u=fade(x),v=fade(y),w=fade(z);const A=P[X]+Y,AA=P[A]+Z,AB=P[A+1]+Z,B=P[X+1]+Y,BA=P[B]+Z,BB=P[B+1]+Z;
+return lerp(lerp(lerp(grad(P[AA]&15,x,y,z),grad(P[BA]&15,x-1,y,z),u),lerp(grad(P[AB]&15,x,y-1,z),grad(P[BB]&15,x-1,y-1,z),u),v),lerp(lerp(grad(P[AA+1]&15,x,y,z-1),grad(P[BA+1]&15,x-1,y,z-1),u),lerp(grad(P[AB+1]&15,x,y-1,z-1),grad(P[BB+1]&15,x-1,y-1,z-1),u),v),w);}
+const fbm=(x,y,z,o=5)=>{let a=0,f=1,amp=.5;for(let i=0;i<o;i++){a+=amp*noise(x*f,y*f,z*f);f*=2;amp*=.5;}return a;};
+
+/* ---------- petroglyph canvas ---------- */
+const W=2048,H=1024;
+function drawGlyphs(ctx,color,lw){
+  ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round';
+  const S=(f)=>{ctx.beginPath();f();ctx.stroke();};
+  // seated buddha
+  const buddha=(cx,cy,s,arms=false)=>{
+    ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);
+    S(()=>ctx.ellipse(0,-40,150,190,0,0,Math.PI*2));           // mandorla
+    S(()=>ctx.ellipse(0,-150,62,62,0,0,Math.PI*2));            // head halo
+    S(()=>ctx.ellipse(0,-150,30,36,0,0,Math.PI*2));            // head
+    S(()=>{ctx.moveTo(-14,-190);ctx.quadraticCurveTo(0,-215,14,-190);});
+    S(()=>{ctx.moveTo(-10,-145);ctx.lineTo(-4,-145);ctx.moveTo(4,-145);ctx.lineTo(10,-145);ctx.moveTo(-6,-128);ctx.quadraticCurveTo(0,-123,6,-128);});
+    S(()=>{ctx.moveTo(-16,-113);ctx.quadraticCurveTo(-75,-100,-80,-40);ctx.quadraticCurveTo(-82,10,-70,40);ctx.moveTo(16,-113);ctx.quadraticCurveTo(75,-100,80,-40);ctx.quadraticCurveTo(82,10,70,40);});
+    S(()=>{ctx.moveTo(-70,40);ctx.quadraticCurveTo(-130,60,-120,85);ctx.quadraticCurveTo(0,110,120,85);ctx.quadraticCurveTo(130,60,70,40);});
+    S(()=>{ctx.moveTo(-60,60);ctx.quadraticCurveTo(0,40,55,70);ctx.moveTo(-30,40);ctx.quadraticCurveTo(-10,20,20,30);});
+    S(()=>{ctx.moveTo(-40,-60);ctx.quadraticCurveTo(-30,0,0,25);ctx.moveTo(40,-60);ctx.quadraticCurveTo(45,-10,25,15);});
+    // lotus
+    for(let i=-3;i<=3;i++) S(()=>{ctx.moveTo(i*40-20,120);ctx.quadraticCurveTo(i*40,95,i*40+20,120);});
+    S(()=>{ctx.moveTo(-150,122);ctx.quadraticCurveTo(0,140,150,122);});
+    if(arms){ for(const sx of [-1,1]) for(let k=0;k<3;k++) S(()=>{ctx.moveTo(sx*70,-70+k*20);ctx.quadraticCurveTo(sx*(115+k*12),-110+k*35,sx*(130+k*5),-160+k*60);}); }
+    ctx.restore();
+  };
+  buddha(1024,500,1.25,true);   // Avalokiteshvara (center, many arms)
+  buddha(540,520,.85);          // Shakyamuni
+  buddha(1510,520,.85);         // Manla
+  // bowl for Manla
+  S(()=>{ctx.ellipse(1510,520+2,22,9,0,0,Math.PI);});
+  // stylized script rows
+  let seed=3; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+  const scriptRow=(x0,y,len)=>{ let x=x0; ctx.lineWidth=lw*.8;
+    S(()=>{ctx.moveTo(x0,y-22);ctx.lineTo(x0+len,y-22);});
+    while(x<x0+len-20){ const w=18+rnd()*14; ctx.beginPath(); ctx.moveTo(x,y-22); const t=rnd();
+      if(t<.33){ctx.lineTo(x,y+10);ctx.quadraticCurveTo(x+w/2,y+20,x+w,y+5);}
+      else if(t<.66){ctx.quadraticCurveTo(x+w,y-10,x+w/2,y+4);ctx.lineTo(x+w,y+16);}
+      else {ctx.moveTo(x+w/2,y-22);ctx.lineTo(x+w/2,y+18);ctx.moveTo(x,y-5);ctx.lineTo(x+w,y-5);}
+      ctx.stroke(); x+=w+8; if(rnd()<.15){ctx.beginPath();ctx.arc(x,y-28,3,0,7);ctx.stroke();x+=10;} }
+    ctx.lineWidth=lw; };
+  scriptRow(760,830,530); scriptRow(810,890,430);
+  scriptRow(330,780,420); scriptRow(1300,780,420);
+  // ibex
+  const ibex=(x,y,s,flip=1)=>{ctx.save();ctx.translate(x,y);ctx.scale(s*flip,s);
+    S(()=>{ctx.moveTo(-60,0);ctx.quadraticCurveTo(0,-14,50,-4);ctx.lineTo(70,-30);ctx.lineTo(84,-22);ctx.lineTo(62,4);ctx.quadraticCurveTo(10,20,-55,12);ctx.closePath();});
+    S(()=>{ctx.moveTo(-45,10);ctx.lineTo(-52,55);ctx.moveTo(-30,12);ctx.lineTo(-26,55);ctx.moveTo(30,10);ctx.lineTo(24,55);ctx.moveTo(45,6);ctx.lineTo(52,55);});
+    S(()=>{ctx.moveTo(-58,0);ctx.lineTo(-70,-12);});
+    S(()=>{ctx.moveTo(68,-30);ctx.bezierCurveTo(40,-110,-40,-100,-30,-40);});
+    ctx.restore();};
+  ibex(150,240,1.1); ibex(1890,260,1.1,-1); ibex(240,520,.7); ibex(1830,560,.75,-1); ibex(1770,140,.6,-1);
+  // sun-headed figure
+  const sunman=(x,y,s)=>{ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+    S(()=>ctx.arc(0,-90,34,0,7)); for(let i=0;i<16;i++){const a=i/16*Math.PI*2;S(()=>{ctx.moveTo(Math.cos(a)*40,-90+Math.sin(a)*40);ctx.lineTo(Math.cos(a)*62,-90+Math.sin(a)*62);});}
+    S(()=>{ctx.arc(-10,-95,4,0,7);});S(()=>{ctx.arc(10,-95,4,0,7);});
+    S(()=>{ctx.moveTo(0,-56);ctx.lineTo(0,40);ctx.moveTo(0,40);ctx.lineTo(-30,100);ctx.moveTo(0,40);ctx.lineTo(30,100);ctx.moveTo(-60,-20);ctx.quadraticCurveTo(0,0,60,-20);});
+    ctx.restore();};
+  sunman(300,880,.9); sunman(1760,880,.9);
+  // spiral
+  S(()=>{for(let t=0;t<6*Math.PI;t+=.1){const r=4+t*7;const X=1880+Math.cos(t)*r,Y=440+Math.sin(t)*r;t===0?ctx.moveTo(X,Y):ctx.lineTo(X,Y);}});
+  S(()=>{for(let t=0;t<5*Math.PI;t+=.1){const r=4+t*6;const X=140+Math.cos(t)*r,Y=700+Math.sin(t)*r;t===0?ctx.moveTo(X,Y):ctx.lineTo(X,Y);}});
+}
+function makeCanvas(){const c=document.createElement('canvas');c.width=W;c.height=H;return c;}
+
+// albedo (rock + pale carvings)
+const albedo=makeCanvas(), a=albedo.getContext('2d');
+{ const w=W/2,h=H/2, tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h; const tc=tmp.getContext('2d');
+  const img=tc.createImageData(w,h), d=img.data;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const n=fbm(x/130,y/130,1.3,4), m=fbm(x/20,y/20,5.1,2), k=Math.random()-.5;
+    let r=118+n*90+m*30+k*18, g=78+n*60+m*20+k*12, b=52+n*40+m*14+k*9;
+    const lic=noise(x/45,y/45,22); if(lic>.28){r+=40;g+=40;b+=30;}   // lichen patches
+    const i=(y*w+x)*4; d[i]=r;d[i+1]=g;d[i+2]=b;d[i+3]=255; }
+  tc.putImageData(img,0,0); a.drawImage(tmp,0,0,W,H);
+  // cracks
+  a.strokeStyle='rgba(30,18,10,.6)';
+  for(let i=0;i<26;i++){a.lineWidth=1+Math.random()*3;a.beginPath();let x=Math.random()*W,y=Math.random()*H;a.moveTo(x,y);for(let j=0;j<12;j++){x+=(Math.random()-.5)*120;y+=Math.random()*60-10;a.lineTo(x,y);}a.stroke();}
+  drawGlyphs(a,'rgba(240,222,186,.85)',7);
+}
+// glyph mask (emissive + bump)
+const mask=makeCanvas(), mk=mask.getContext('2d'); mk.fillStyle='#000'; mk.fillRect(0,0,W,H); drawGlyphs(mk,'#fff',8);
+const bump=makeCanvas(), bk=bump.getContext('2d'); bk.drawImage(albedo,0,0); bk.globalCompositeOperation='saturation'; bk.fillStyle='#000';bk.fillRect(0,0,W,H); bk.globalCompositeOperation='source-over'; bk.globalAlpha=.9; drawGlyphs(bk,'#000',9);
+
+/* ---------- scene ---------- */
+const canvas=document.getElementById('scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+const scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x7a4a32,.035);
+const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.1,200);
+camera.position.set(3,4,30);   // intro fly-in
+
+// sky dome gradient
+const sky=new THREE.Mesh(new THREE.SphereGeometry(90,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,uniforms:{t:{value:0}},
+  vertexShader:`varying vec3 p;void main(){p=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 p;uniform float t;float h(vec2 v){return fract(sin(dot(v,vec2(12.9898,78.233)))*43758.5453);}
+  void main(){float y=p.y;vec3 top=vec3(.02,.03,.08),mid=vec3(.12,.08,.12),hor=vec3(.55,.28,.12);
+  vec3 c=mix(hor,mid,smoothstep(-.05,.18,y));c=mix(c,top,smoothstep(.15,.6,y));
+  vec2 g=floor(p.xz/(p.y+1.2)*260.);float s=step(.996,h(g))*smoothstep(.1,.5,y)*(.6+.4*sin(t*2.+h(g)*40.));
+  gl_FragColor=vec4(c+s,1.);}`}));
+scene.add(sky);
+
+// rock wall
+const tex=t=>{const x=new THREE.CanvasTexture(t);x.anisotropy=renderer.capabilities.getMaxAnisotropy();return x;};
+const albedoTex=tex(albedo); albedoTex.colorSpace=THREE.SRGBColorSpace;
+const rockMat=new THREE.MeshStandardMaterial({map:albedoTex,bumpMap:tex(bump),bumpScale:4,roughness:.92,metalness:0,
+  emissiveMap:tex(mask),emissive:new THREE.Color(0xffb85c),emissiveIntensity:0});
+const geo=new THREE.PlaneGeometry(12,6,256,128);
+{ const pos=geo.attributes.position; for(let i=0;i<pos.count;i++){ const x=pos.getX(i),y=pos.getY(i);
+  let z=fbm(x*.35,y*.35,.5,5)*.9 + fbm(x*1.6,y*1.6,3,3)*.12 - (x*x)*.035;
+  const ex=Math.max(0,Math.abs(x)-5.2), ey=Math.max(0,Math.abs(y)-2.6); z-= (ex*ex+ey*ey)*3;
+  pos.setZ(i,z);} geo.computeVertexNormals(); }
+const wall=new THREE.Mesh(geo,rockMat); wall.rotation.x=-.12; scene.add(wall);
+
+// surrounding boulders/cliffs
+const bMat=new THREE.MeshStandardMaterial({color:0x5a3d29,roughness:1,flatShading:true});
+function boulder(r,detail=3){const g=new THREE.IcosahedronGeometry(r,detail);const p=g.attributes.position;const v=new THREE.Vector3();
+  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);const n=1+fbm(v.x*.6+r,v.y*.6,v.z*.6,4)*.55;v.multiplyScalar(n);v.y*=.75;p.setXYZ(i,v.x,v.y,v.z);}g.computeVertexNormals();return new THREE.Mesh(g,bMat);}
+[[-9,-1,-2,4.2],[9.5,-.5,-2.5,4.6],[-14,1,-8,6],[15,1.5,-9,7],[-6,-3.6,2.5,1.4],[6.5,-3.8,2.8,1.2],[0,-4.2,3.5,.9],[-20,3,-20,9],[22,3,-22,10]].forEach(([x,y,z,r])=>{const b=boulder(r);b.position.set(x,y,z);b.rotation.set(Math.random(),Math.random()*6,0);scene.add(b);});
+
+// ground
+const gGeo=new THREE.PlaneGeometry(120,120,120,120);{const p=gGeo.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,fbm(x*.08,y*.08,7,4)*2.5);}gGeo.computeVertexNormals();}
+const ground=new THREE.Mesh(gGeo,new THREE.MeshStandardMaterial({color:0x3b2a1d,roughness:1,flatShading:true}));ground.rotation.x=-Math.PI/2;ground.position.y=-4.6;scene.add(ground);
+
+// river
+const river=new THREE.Mesh(new THREE.PlaneGeometry(160,14,1,1),new THREE.ShaderMaterial({transparent:true,uniforms:{t:{value:0}},fog:false,
+  vertexShader:`varying vec2 u;varying vec3 w;void main(){u=uv;vec4 wp=modelMatrix*vec4(position,1.);w=wp.xyz;gl_Position=projectionMatrix*viewMatrix*wp;}`,
+  fragmentShader:`varying vec2 u;varying vec3 w;uniform float t;void main(){float r=sin(w.x*1.3+t*1.5)*sin(w.z*2.2-t)*.5+.5;
+  vec3 c=mix(vec3(.05,.22,.27),vec3(.4,.65,.7),r*.35);float edge=smoothstep(0.,.15,u.y)*smoothstep(1.,.85,u.y);
+  float glint=pow(r,12.)*.8;float d=length(w-cameraPosition);float f=exp(-d*.03);gl_FragColor=vec4(mix(vec3(.05,.04,.05),c+glint,f),edge*.92);}`}));
+river.rotation.x=-Math.PI/2;river.position.set(0,-4.3,14);scene.add(river);
+
+// dust particles
+const N=900,pg=new THREE.BufferGeometry(),pa=new Float32Array(N*3);for(let i=0;i<N;i++){pa[i*3]=(Math.random()-.5)*30;pa[i*3+1]=(Math.random()-.5)*12;pa[i*3+2]=Math.random()*14-4;}
+pg.setAttribute('position',new THREE.BufferAttribute(pa,3));
+const dots=new THREE.Points(pg,new THREE.PointsMaterial({color:0xffcf8a,size:.035,transparent:true,opacity:.7,depthWrite:false,blending:THREE.AdditiveBlending}));scene.add(dots);
+
+// lights
+scene.add(new THREE.HemisphereLight(0x8aa0c8,0x2a1a10,.35));
+const sun=new THREE.DirectionalLight(0xffc488,2.2);sun.position.set(-10,6,5);scene.add(sun);   // raking light reveals carving
+const rim=new THREE.DirectionalLight(0x6f8cff,.5);rim.position.set(8,3,-6);scene.add(rim);
+const torch=new THREE.PointLight(0xffb060,0,7,1.6);torch.position.set(0,0,2.5);scene.add(torch);
+
+/* ---------- hotspots ---------- */
+const spots=[
+  {u:540/W,v:420/H,n:'1',name:'Шакьямуни',tag:'Будда',text:'Буддизмнің негізін салушы. Нұр шеңбері ішінде, лотос үстінде аяғын айқастырып отырған қалпында бейнеленген.'},
+  {u:1024/W,v:330/H,n:'2',name:'Авалокитешвара',tag:'Бодхисаттва',text:'Мейірім мен жанашырлықтың бейнесі. Композицияның ортасындағы ең үлкен бейне — көп қолды бодхисаттва.'},
+  {u:1510/W,v:420/H,n:'3',name:'Манла',tag:'Емші Будда',text:'Емдеу мен денсаулықтың қамқоршысы. Қолында дәрі ыдысы бар Будда ретінде танылады.'},
+  {u:1040/W,v:850/H,n:'✎',name:'Діни жазулар',tag:'Тибет және ойрат тілдері',text:'Бейнелердің астына тибет және ойрат тілдеріндегі дұға мәтіндері қашалған. Олар XVII ғасырдағы Жоңғар дәуірінің рухани мәдениетін көрсетеді.'},
+  {u:150/W,v:220/H,n:'◎',name:'Тауешкі',tag:'Петроглиф',text:'Тауешкі — Жетісу жартас өнеріндегі ең жиі кездесетін бейне. Ол молшылық пен күштің символы саналған.'},
+  {u:300/W,v:820/H,n:'☀',name:'Күнбасты адам',tag:'Антропоморфтық бейне',text:'Сәулелі басы бар бейнелер — Жетісу петроглифтерінің ең танымал белгілерінің бірі. Олар ежелгі адамдардың аспан мен күн туралы түсінігін білдіреді.'},
+];
+const hsWrap=document.getElementById('hotspots');
+spots.forEach(s=>{const el=document.createElement('button');el.className='hs';el.innerHTML=`${s.n}<span>${s.name}</span>`;el.onclick=()=>openInfo(s);hsWrap.appendChild(el);s.el=el;});
+const info=document.getElementById('info');
+function openInfo(s){info.querySelector('.tag').textContent=s.tag;info.querySelector('h3').textContent=s.name;info.querySelector('p').textContent=s.text;info.classList.add('open');focus=s;}
+info.querySelector('.x').onclick=()=>{info.classList.remove('open');focus=null;};
+let focus=null;
+// local position on the wall surface (raycast down onto the plane)
+const ray=new THREE.Raycaster();
+wall.updateMatrixWorld();
+spots.forEach(s=>{const lx=(s.u-.5)*12, ly=(.5-s.v)*6;const o=new THREE.Vector3(lx,ly,5).applyMatrix4(wall.matrixWorld);const d=new THREE.Vector3(0,0,-1).transformDirection(wall.matrixWorld);ray.set(o,d);const h=ray.intersectObject(wall)[0];s.p=h?h.point.clone().add(d.clone().multiplyScalar(-.05)):new THREE.Vector3(lx,ly,0);});
+
+/* ---------- interaction ---------- */
+const mouse={x:0,y:0,tx:0,ty:0}; let drag=null, yaw=0, pitch=0, tYaw=0, tPitch=0, torchOn=false;
+addEventListener('pointermove',e=>{mouse.tx=e.clientX/innerWidth*2-1;mouse.ty=-(e.clientY/innerHeight*2-1);
+  if(drag){tYaw=drag.yaw+(e.clientX-drag.x)*.004;tPitch=Math.max(-.25,Math.min(.35,drag.pitch+(e.clientY-drag.y)*.003));}});
+canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,yaw:tYaw,pitch:tPitch};});
+addEventListener('pointerup',()=>{drag=null;});
+// let canvas receive drags under transparent hero
+document.querySelector('.hero').addEventListener('pointerdown',e=>{if(e.target.closest('a,button'))return;drag={x:e.clientX,y:e.clientY,yaw:tYaw,pitch:tPitch};});
+document.querySelector('.hero').style.pointerEvents='auto';
+const torchBtn=document.getElementById('torchBtn');
+torchBtn.onclick=()=>{torchOn=!torchOn;torchBtn.textContent=torchOn?'🌙 Шамды сөндіру':'🔦 Шамды жағу';};
+
+/* ---------- loop ---------- */
+const clock=new THREE.Clock(); const v=new THREE.Vector3();
+function frame(){
+  const t=clock.getElapsedTime();
+  const sp=Math.min(1,scrollY/innerHeight);                // 0..1 over hero
+  const deep=Math.min(1,scrollY/(document.body.scrollHeight-innerHeight));
+  mouse.x+= (mouse.tx-mouse.x)*.06; mouse.y+=(mouse.ty-mouse.y)*.06;
+  yaw+=(tYaw-yaw)*.08; pitch+=(tPitch-pitch)*.08;
+  if(!drag) tYaw*=.995;
+  // camera orbit + scroll travel
+  const fit=camera.aspect<1.25?Math.min(2.2,1.25/camera.aspect):1;   // keep wall in frame on portrait screens
+  const wide=camera.aspect>1.25;
+  // wide: wall sits to the right of the title; portrait: wall sits above the title
+  let target=new THREE.Vector3(wide?-3.4*(1-sp):0, wide?.2:-4.4*(1-sp), 0); let dist=(wide?9.5:11.5)*fit - sp*3;
+  if(focus){target.lerp(focus.p,.9);dist=5.2;}
+  const ang=yaw+mouse.x*.12 + deep*1.4, el=.08+pitch+mouse.y*.06 + deep*.25;
+  const desired=new THREE.Vector3(target.x+Math.sin(ang)*dist*Math.cos(el), target.y+Math.sin(el)*dist - sp*.6, target.z+Math.cos(ang)*dist*Math.cos(el));
+  camera.position.lerp(desired,.06);
+  camera.userData.look=(camera.userData.look||target.clone()).lerp(target,.08);
+  camera.lookAt(camera.userData.look);
+  // glow
+  const base=torchOn?.15:(.25+Math.sin(t*1.2)*.15);
+  rockMat.emissiveIntensity=base+(focus?.4:0);
+  torch.intensity+=((torchOn?30:0)-torch.intensity)*.1;
+  if(torchOn){ v.set(mouse.x,mouse.y,.5).unproject(camera).sub(camera.position).normalize(); ray.set(camera.position,v); const h=ray.intersectObject(wall)[0]; if(h) torch.position.copy(h.point).add(new THREE.Vector3(0,0,1.2)); }
+  sun.intensity=torchOn?.25:2.2;
+  sun.position.x=-10+Math.sin(t*.15)*3;
+  sky.material.uniforms.t.value=t; river.material.uniforms.t.value=t;
+  dots.rotation.y=t*.01; const ap=pg.attributes.position; for(let i=0;i<N;i++){ap.array[i*3+1]+=Math.sin(t+i)*.0015;} ap.needsUpdate=true;
+  renderer.render(scene,camera);
+  // hotspots
+  hsWrap.style.opacity=sp<.6?1-sp/.6:0; hsWrap.style.display=sp<.6?'block':'none';
+  spots.forEach(s=>{v.copy(s.p).project(camera);const vis=v.z<1&&Math.abs(v.x)<1.05&&Math.abs(v.y)<1.05;s.el.style.display=vis?'grid':'none';s.el.style.transform=`translate(${(v.x*.5+.5)*innerWidth}px,${(-v.y*.5+.5)*innerHeight}px)`;});
+  requestAnimationFrame(frame);
+}
+spots.forEach(s=>{s.el.style.left='0';s.el.style.top='0';});
+frame();
+document.getElementById('loader').classList.add('done');
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('solid',scrollY>60); if(scrollY>innerHeight*.5&&focus){info.classList.remove('open');focus=null;}},{passive:true});
+
+/* ---------- UI: reveal, counters, tilt ---------- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');e.target.querySelectorAll?.('[data-count]').forEach(countUp);io.unobserve(e.target);}}),{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+function countUp(el){const end=+el.dataset.count;const t0=performance.now();const step=n=>{const k=Math.min(1,(n-t0)/1600);el.textContent=Math.round(end*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);}
+document.querySelectorAll('.card').forEach(c=>{
+  c.addEventListener('pointermove',e=>{const r=c.getBoundingClientRect();const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;c.style.transform=`rotateY(${(x-.5)*16}deg) rotateX(${(.5-y)*14}deg) translateZ(10px)`;c.style.setProperty('--gx',x*100+'%');c.style.setProperty('--gy',y*100+'%');});
+  c.addEventListener('pointerleave',()=>{c.style.transform='';});
+});
+document.querySelector('.burger').onclick=()=>document.querySelector('.links').classList.toggle('open');
+document.querySelectorAll('.links a').forEach(a=>a.onclick=()=>document.querySelector('.links').classList.remove('open'));
+
+/* ---------- 3D carousel ---------- */
+const photos=[
+  ['img/buddha-wall.jpg','Бурхандар жартасы — үш бейне'],['img/buddha-close.jpg','Шакьямуни бейнесі'],['img/tibet-script.jpg','Тибет жазуы'],
+  ['img/ili-gorge.jpg','Таңбалы шатқалы'],['img/sun-head.jpg','Күнбасты бейне'],['img/ili-rocks.jpg','Іле жағасындағы жартастар'],
+  ['img/ancient-script.jpg','Көне жазу'],['img/ili-river.jpg','Іле өзені аңғары']];
+const ring=document.getElementById('ring'),stage=document.getElementById('stage');
+const R=()=>innerWidth<900?300:520; let rot=0,trot=0;
+photos.forEach(([f,c],i)=>{const fig=document.createElement('figure');fig.className='slide';fig.innerHTML=`<img src="${f}" alt="${c}"><figcaption>${c}</figcaption>`;fig.onclick=()=>{if(moved)return;lb.querySelector('img').src=f;lb.querySelector('p').textContent=c;lb.classList.add('open');};ring.appendChild(fig);});
+const slides=[...ring.children];
+function layout(){slides.forEach((s,i)=>{const a=i/slides.length*360;s.style.transform=`rotateY(${a}deg) translateZ(${R()}px)`;});}
+layout(); addEventListener('resize',layout);
+let sd=null,moved=false;
+stage.addEventListener('pointerdown',e=>{sd={x:e.clientX,r:trot};moved=false;});
+addEventListener('pointermove',e=>{if(!sd)return;const dx=e.clientX-sd.x;if(Math.abs(dx)>5)moved=true;trot=sd.r+dx*.3;});
+addEventListener('pointerup',()=>{if(sd){const st=360/slides.length;trot=Math.round(trot/st)*st;}sd=null;});
+document.getElementById('prev').onclick=()=>{trot+=360/slides.length;};
+document.getElementById('next').onclick=()=>{trot-=360/slides.length;};
+(function spin(){if(!sd)trot-=.03;rot+=(trot-rot)*.08;ring.style.transform=`translateZ(${-R()}px) rotateX(-6deg) rotateY(${rot}deg)`;requestAnimationFrame(spin);})();
+const lb=document.getElementById('lightbox');lb.onclick=()=>lb.classList.remove('open');
+addEventListener('keydown',e=>{if(e.key==='Escape'){lb.classList.remove('open');info.classList.remove('open');focus=null;}});
+
+/* ---------- flow animation ---------- */
+const steps=[...document.querySelectorAll('#flow .step')];let fi=0;setInterval(()=>{steps.forEach((s,i)=>s.classList.toggle('on',i<=fi));fi=(fi+1)%(steps.length+1);},900);
+
+/* ---------- decorative QR ---------- */
+{const q=document.getElementById('qr');let s='';let seed=11;const r=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+const fin=(x,y)=>{s+=`<rect x="${x}" y="${y}" width="7" height="7" fill="#120d0a"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#f6dfae"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#120d0a"/>`;};
+for(let y=0;y<21;y++)for(let x=0;x<21;x++){if((x<8&&y<8)||(x>12&&y<8)||(x<8&&y>12))continue;if(r()>.5)s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="#120d0a"/>`;}
+fin(0,0);fin(14,0);fin(0,14);q.innerHTML=s;}
+
+/* ---------- digital archive ---------- */
+const ARCH=[
+  {id:'TMG-PET-001',img:'img/buddha-wall.jpg',name:'Бурхандар жартасы',cat:'Будда бейнесі',per:'XVII–XVIII ғ., Жоңғар дәуірі',tech:'Ойып қашау, контурлық сызық',comp:'Үш бейне: ортада Авалокитешвара, екі жағында Будда бейнелері, төменде жазулар',desc:'Таңбалы тастың ең әйгілі композициясы. Тік жартастың тегіс бетіне нұр шеңберлері ішінде отырған бейнелер мен діни мәтіндер қашалған.',rel:'TMG-PET-002, TMG-PET-003'},
+  {id:'TMG-PET-002',img:'img/buddha-close.jpg',name:'Шакьямуни',cat:'Будда бейнесі',per:'XVII–XVIII ғ., Жоңғар дәуірі',tech:'Ойып қашау',comp:'Нұр шеңбері, лотос тағы, астында жазу жолы',desc:'Лотос үстінде аяғын айқастырып отырған Будда. Бейненің астына тибет жазуымен дұға мәтіні түсірілген.',rel:'TMG-PET-001'},
+  {id:'TMG-PET-003',img:'img/tibet-script.jpg',name:'Тибет жазуы',cat:'Жазу',per:'XVII–XVIII ғ.',tech:'Ойып қашау',comp:'Екі жолды мәтін, жанында спираль тәрізді белгілер',desc:'Тибет әліпбиімен жазылған діни мәтін. Мұндай жазулар көбіне бурхандар бейнесінің жанында орналасады.',rel:'TMG-PET-004'},
+  {id:'TMG-PET-004',img:'img/ancient-script.jpg',name:'Көне жазу',cat:'Жазу',per:'Нақтылауды қажет етеді',tech:'Сызып түсіру',comp:'Үш жолды мәтін',desc:'Жартас бетіне сызылған көне таңбалар. Жазудың түрі мен мерзімін анықтау үшін салыстырмалы зерттеу қажет.',rel:'TMG-PET-003'},
+  {id:'TMG-PET-005',img:'img/sun-head.jpg',name:'Күнбасты бейне',cat:'Антропоморф',per:'Қола дәуірі (болжам)',tech:'Нүктелеп ұру (пикетаж)',comp:'Сәулелі бас, қисық сызықтар',desc:'Басы күн тәрізді сәулелермен қоршалған бейне — Жетісу жартас өнерінің ең танымал белгілерінің бірі. Аспан мен күнге табынумен байланыстырылады.',rel:'TMG-PET-001'},
+  {id:'TMG-LND-006',img:'img/ili-gorge.jpg',name:'Таңбалы шатқалы',cat:'Ландшафт',per:'Қазіргі көрініс',tech:'Фото тіркеу',comp:'Шатқал, Іле өзені, туристік аймақ',desc:'Шатқал Іле өзенінің оң жағалауына шығады. Ескерткіш табиғи ландшафтпен біртұтас мәдени кеңістік құрайды.',rel:'TMG-LND-007'},
+  {id:'TMG-LND-007',img:'img/ili-rocks.jpg',name:'Жағалау жартастары',cat:'Ландшафт',per:'Қазіргі көрініс',tech:'Фото тіркеу',comp:'Гранит жартастар, өзен жағасы',desc:'Бейнелер қашалған жартастар табиғи мүжілуге ұшырайды — цифрлық тіркеу олардың қазіргі күйін сақтап қалуға көмектеседі.',rel:'TMG-LND-008'},
+  {id:'TMG-LND-008',img:'img/ili-river.jpg',name:'Іле аңғары',cat:'Ландшафт',per:'Қазіргі көрініс',tech:'Фото тіркеу',comp:'Өзен арнасы, құм төбелер, таулар',desc:'Іле өзені — ежелден Жетісудағы көшпелілер мен керуен жолдарының маңызды бағыты болған.',rel:'TMG-LND-006'},
+];
+const archEl=document.getElementById('arch'),filtEl=document.getElementById('filters');
+const cats=['Барлығы',...new Set(ARCH.map(a=>a.cat))];
+filtEl.innerHTML=cats.map((c,i)=>`<button class="${i?'':'on'}" data-c="${c}">${c}<b>${i?ARCH.filter(a=>a.cat===c).length:ARCH.length}</b></button>`).join('');
+archEl.innerHTML=ARCH.map((a,i)=>`<button class="ac" data-i="${i}" data-c="${a.cat}"><img src="${a.img}" alt="${a.name}"><div><code>${a.id}</code><h4>${a.name}</h4><small>${a.cat} · ${a.per}</small></div></button>`).join('');
+filtEl.querySelectorAll('button').forEach(b=>b.onclick=()=>{filtEl.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));const c=b.dataset.c;archEl.querySelectorAll('.ac').forEach(el=>el.style.display=(c==='Барлығы'||el.dataset.c===c)?'':'none');});
+const pm=document.getElementById('pmodal');
+archEl.querySelectorAll('.ac').forEach(el=>el.onclick=()=>{const a=ARCH[+el.dataset.i];
+  pm.querySelector('.pimg2').innerHTML=`<img src="${a.img}" alt="${a.name}">`;
+  pm.querySelector('.pdata2').innerHTML=`<div class="id">ЦИФРЛЫҚ ПАСПОРТ · ${a.id}</div><h3>${a.name}</h3><dl><dt>Санаты</dt><dd>${a.cat}</dd><dt>Кезеңі</dt><dd>${a.per}</dd><dt>Техникасы</dt><dd>${a.tech}</dd><dt>Композициясы</dt><dd>${a.comp}</dd><dt>Орналасуы</dt><dd>Таңбалы тас, 44.0612° N, 76.9980° E</dd><dt>Ұқсас нысандар</dt><dd>${a.rel}</dd></dl><p>${a.desc}</p>`;
+  pm.classList.add('open');});
+pm.onclick=e=>{if(e.target===pm||e.target.classList.contains('x'))pm.classList.remove('open');};
+addEventListener('keydown',e=>{if(e.key==='Escape')pm.classList.remove('open');});
+
+/* ---------- enhancement lab ---------- */
+const cB=document.getElementById('cBefore'),cA=document.getElementById('cAfter'),xB=cB.getContext('2d'),xA=cA.getContext('2d',{willReadFrequently:true});
+const thumbs=document.getElementById('thumbs');let src=null,mode='contrast';
+const LAB_IMG=['img/buddha-close.jpg','img/tibet-script.jpg','img/sun-head.jpg','img/ancient-script.jpg'];
+thumbs.innerHTML=LAB_IMG.map((s,i)=>`<img src="${s}" class="${i?'':'on'}" alt="">`).join('');
+const notes={contrast:'Контраст — жарық пен көлеңке айырмашылығын күшейтіп, ойылған сызықтарды айқындайды.',
+  dstretch:'Түс күшейту — тас бетіндегі әлсіз түс айырмашылықтарын бөліп көрсетеді (DStretch әдісіне ұқсас).',
+  edges:'Сызықтарды табу — Собель операторы арқылы бейненің контурын анықтайды. ЖИ-ге дейінгі алғашқы өңдеу кезеңі.',
+  relief:'Рельеф — көлбеу түскен жарықты имитациялап, ойықтардың тереңдігін көрсетеді.'};
+function loadLab(url){const im=new Image();im.onload=()=>{const k=Math.min(1,1000/im.naturalWidth);const w=Math.round(im.naturalWidth*k),h=Math.round(im.naturalHeight*k);
+  [cB,cA].forEach(c=>{c.width=w;c.height=h;});xB.drawImage(im,0,0,w,h);src=xB.getImageData(0,0,w,h);applyLab();};im.src=url;}
+function applyLab(){if(!src)return;const s=+document.getElementById('str').value/100;const {width:w,height:h,data:d}=src;const out=xA.createImageData(w,h),o=out.data;const n=w*h;
+  if(mode==='contrast'||mode==='dstretch'){
+    const lo=[0,0,0],hi=[0,0,0];for(let c=0;c<3;c++){const hist=new Uint32Array(256);for(let i=0;i<n;i++)hist[d[i*4+c]]++;let acc=0;lo[c]=0;hi[c]=255;let fl=false;for(let v=0;v<256;v++){acc+=hist[v];if(!fl&&acc>n*.01){lo[c]=v;fl=true;}if(acc>n*.99){hi[c]=v;break;}}}
+    let mean=[0,0,0];if(mode==='dstretch'){for(let i=0;i<n;i++)for(let c=0;c<3;c++)mean[c]+=d[i*4+c];mean=mean.map(m=>m/n);}
+    for(let i=0;i<n;i++){const p=i*4;
+      if(mode==='contrast'){for(let c=0;c<3;c++){let v=(d[p+c]-lo[c])/Math.max(1,hi[c]-lo[c]);v=(v-.5)*(1+s*1.8)+.5;o[p+c]=v*255;}}
+      else{const L=(d[p]+d[p+1]+d[p+2])/3,mL=(mean[0]+mean[1]+mean[2])/3;for(let c=0;c<3;c++){const chroma=(d[p+c]-L)-(mean[c]-mL);o[p+c]=128+(L-mL)*(1+s)+chroma*(2+s*10)+[40,-10,-30][c]*s;}}
+      o[p+3]=255;}
+  } else {
+    const g=new Float32Array(n);for(let i=0;i<n;i++)g[i]=(d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11);
+    const b=new Float32Array(n);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){let t=0;for(let j=-1;j<=1;j++)for(let k=-1;k<=1;k++)t+=g[(y+j)*w+x+k];b[y*w+x]=t/9;}
+    let mx=1;const e=new Float32Array(n);
+    for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){const i=y*w+x;
+      const gx=-b[i-w-1]-2*b[i-1]-b[i+w-1]+b[i-w+1]+2*b[i+1]+b[i+w+1];
+      const gy=-b[i-w-1]-2*b[i-w]-b[i-w+1]+b[i+w-1]+2*b[i+w]+b[i+w+1];
+      e[i]=mode==='edges'?Math.hypot(gx,gy):(gx+gy);if(mode==='edges'&&e[i]>mx)mx=e[i];}
+    for(let i=0;i<n;i++){const p=i*4;
+      if(mode==='edges'){const v=Math.min(1,Math.pow(e[i]/mx,.7)*(1.5+s*3));const dim=1-.3-s*.6;o[p]=d[p]*dim+v*246;o[p+1]=d[p+1]*dim+v*200;o[p+2]=d[p+2]*dim+v*120;}
+      else{const v=128+e[i]*(1+s*4);const m=.25+s*.6;for(let c=0;c<3;c++)o[p+c]=d[p+c]*(1-m)+v*m;}
+      o[p+3]=255;}
+  }
+  xA.putImageData(out,0,0);}
+thumbs.querySelectorAll('img').forEach((t,i)=>t.onclick=()=>{thumbs.querySelectorAll('img').forEach(x=>x.classList.toggle('on',x===t));loadLab(LAB_IMG[i]);});
+document.getElementById('upl').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{thumbs.querySelectorAll('img').forEach(x=>x.classList.remove('on'));loadLab(r.result);};r.readAsDataURL(f);};
+document.getElementById('modes').querySelectorAll('button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x===b));document.getElementById('labNote').textContent=notes[mode];applyLab();});
+document.getElementById('str').oninput=e=>{document.getElementById('strV').textContent=e.target.value;applyLab();};
+const cmp=document.getElementById('cmp'),cmpB=document.getElementById('cmpB'),cmpH=document.getElementById('cmpH');
+const setCmp=x=>{const r=cmp.getBoundingClientRect();const k=Math.max(0,Math.min(1,(x-r.left)/r.width));cmpB.style.clipPath=`inset(0 ${100-k*100}% 0 0)`;cmpH.style.left=k*100+'%';};
+let cmpDrag=false;cmp.addEventListener('pointerdown',e=>{cmpDrag=true;cmp.setPointerCapture(e.pointerId);setCmp(e.clientX);});
+cmp.addEventListener('pointermove',e=>{if(cmpDrag)setCmp(e.clientX);});cmp.addEventListener('pointerup',()=>cmpDrag=false);
+loadLab(LAB_IMG[0]);
+
+/* ---------- map ---------- */
+let mapDone=false;
+new IntersectionObserver((es,ob)=>{if(!es[0].isIntersecting||mapDone)return;mapDone=true;ob.disconnect();
+  if(typeof L==='undefined'){document.getElementById('map').innerHTML='<p style="padding:20px;color:var(--muted)">Картаны көру үшін интернет қажет.</p>';return;}
+  const T=[44.061240,76.998028],K=[43.8667,77.0667];
+  const map=L.map('map',{scrollWheelZoom:false});
+  map.fitBounds([T,K],{padding:[70,70]});
+  map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri',maxZoom:18}).addTo(map);
+  const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:18,className:'osm-dark'});
+  L.control.layers({'Спутник':sat,'Карта':osm},null,{position:'topright'}).addTo(map);
+  L.marker(T,{icon:L.divIcon({className:'',html:'<div class="pin"></div>',iconSize:[18,18]})}).addTo(map).bindPopup('<b>Таңбалы тас</b><br>Будда бейнелері мен тибет, ойрат жазулары').openPopup();
+  L.marker(K,{icon:L.divIcon({className:'',html:'<div class="pin s"></div>',iconSize:[12,12]})}).addTo(map).bindPopup('<b>Қонаев</b> (Қапшағай)');
+  L.polyline([T,K],{color:'#e8c480',weight:2,dashArray:'6 8'}).addTo(map);
+},{threshold:.2}).observe(document.getElementById('map'));
+</script>
+</body>
+</html>
