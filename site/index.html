@@ -224,6 +224,21 @@ input[type=range]{width:100%;accent-color:var(--ember)}
 #loader div{font-family:var(--serif);color:var(--gold2);font-size:28px;letter-spacing:.2em;text-align:center}
 #loader small{display:block;font-family:var(--sans);font-size:12px;color:var(--muted);letter-spacing:.3em;margin-top:10px}
 
+/* library */
+.lib{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.rc{position:relative;border:1px solid var(--line);border-radius:18px;padding:24px 22px 22px;background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(0,0,0,.08));transition:transform .3s,border-color .3s;display:flex;flex-direction:column}
+.rc:hover{transform:translateY(-4px);border-color:rgba(232,196,128,.5)}
+.rc[hidden]{display:none}
+.rc .ini{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-family:var(--serif);font-size:22px;color:var(--bg);background:linear-gradient(135deg,var(--gold2),var(--ember));margin-bottom:14px}
+.rc .yr{position:absolute;top:22px;right:20px;font-family:var(--serif);font-size:22px;color:var(--gold)}
+.rc h4{font-family:var(--serif);font-size:25px;color:var(--gold2);line-height:1.1}
+.rc .life{font-size:12px;color:var(--muted);opacity:.8;margin-top:3px}
+.rc .role{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ember);margin:10px 0 10px}
+.rc p{font-size:14px;color:#ddd1bf;flex:1}
+.rc .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.rc .tags span{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--gold2)}
+.libnote{margin-top:28px;font-size:13px;color:var(--muted);opacity:.85}
+
 @media (max-width:900px){
   .links{display:none;position:absolute;top:64px;right:16px;flex-direction:column;background:rgba(122,74,50,.95);border:1px solid var(--line);border-radius:14px;padding:18px 22px;gap:14px}
   .links.open{display:flex}
@@ -239,6 +254,7 @@ input[type=range]{width:100%;accent-color:var(--ember)}
   .slide{width:220px;height:150px;left:-110px;top:-75px}
   .passport dl{grid-template-columns:1fr}
   .arch{grid-template-columns:repeat(2,1fr);gap:12px}
+  .lib{grid-template-columns:1fr}
   .ac h4{font-size:18px}
   .pbox{grid-template-columns:1fr}
   .pdata2 dl{grid-template-columns:1fr}
@@ -264,6 +280,7 @@ input[type=range]{width:100%;accent-color:var(--ember)}
     <li><a href="#burkhans">Бейнелер</a></li>
     <li><a href="#script">Жазулар</a></li>
     <li><a href="#research">Зерттелуі</a></li>
+    <li><a href="#library">Кітапхана</a></li>
     <li><a href="#gallery">3D галерея</a></li>
     <li><a href="#digital">Цифрлық мұра</a></li>
     <li><a href="#archive">Архив</a></li>
@@ -360,6 +377,37 @@ input[type=range]{width:100%;accent-color:var(--ember)}
         <div class="tl"><b>2008–10</b><span>А.Е. Рогожинский, И.В. Ерофеева, Б.Ж. Әубәкіров және шетелдік ғалымдар</span></div>
         <div class="tl big"><b>2026</b><span>«Digital Tańbaly» — цифрлық сақтау жобасы</span></div>
       </div>
+    </div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section class="block" id="library">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="kicker">Кітапхана · Зерттеушілер</div>
+        <h2>Таңбалы тасты зерттеген ғалымдар</h2>
+        <p class="sub">XIX ғасырдан бүгінге дейін ескерткішті сипаттап, жазуларын оқып, сақтауға үлес қосқан зерттеушілер. Дәуір бойынша сүзіп көріңіз.</p>
+      </div>
+      <div class="filters reveal" id="libFilters">
+        <button class="on" data-era="all">Барлығы<b>11</b></button>
+        <button data-era="xix">XIX ғасыр<b>5</b></button>
+        <button data-era="xx">XX ғасыр<b>3</b></button>
+        <button data-era="xxi">XXI ғасыр<b>3</b></button>
+      </div>
+      <div class="lib" id="lib">
+        <article class="rc reveal" data-era="xix"><div class="ini">ШУ</div><span class="yr">1856</span><h4>Шоқан Уәлиханов</h4><div class="life">1835–1865</div><div class="role">Ғалым, шығыстанушы, саяхатшы</div><p>Таңбалы тасқа келіп, жартастағы бурхан бейнелерін алғаш рет сипаттап, қағазға салған. Ескерткіштің ғылыми зерттелуі осы жазбалардан басталады.</p><div class="tags"><span>Алғашқы сипаттама</span><span>Суреттер</span></div></article>
+        <article class="rc reveal" data-era="xix"><div class="ini">КЛ</div><span class="yr">1877</span><h4>К.А. Ларионов</h4><div class="role">Зерттеуші</div><p>Ескерткіш туралы мәліметтерді толықтырып, Жетісудағы будда ескерткіштеріне қызығушылықты арттырған зерттеушілердің бірі.</p><div class="tags"><span>Дала жазбалары</span></div></article>
+        <article class="rc reveal" data-era="xix"><div class="ini">АП</div><span class="yr">1896–98</span><h4>А.М. Позднеев</h4><div class="life">1851–1920</div><div class="role">Моңғолтанушы, шығыстанушы</div><p>Таңбалы тастағы тибет және ойрат (тодо бичиг) жазуларын оқып, түсіндірген. Жазулардың будда дұғалары екенін ғылыми тұрғыда көрсетті.</p><div class="tags"><span>Тибет жазуы</span><span>Ойрат жазуы</span><span>Аударма</span></div></article>
+        <article class="rc reveal" data-era="xix"><div class="ini">НП</div><span class="yr">1896–98</span><h4>Н.Н. Пантусов</h4><div class="life">1849–1909</div><div class="role">Шығыстанушы, археолог</div><p>Жетісудағы көне жазулар мен ескерткіштерді жинап, жариялаған. Таңбалы тас жазуларын тіркеп, ғылыми айналымға енгізуге үлес қосты.</p><div class="tags"><span>Эпиграфика</span><span>Жетісу</span></div></article>
+        <article class="rc reveal" data-era="xix"><div class="ini">ФП</div><span class="yr">1898</span><h4>Ф.В. Поярков</h4><div class="life">1851–1910</div><div class="role">Этнограф, археолог</div><p>Жетісу өлкесінің ескерткіштерін зерттеп, Іле бойындағы будда бейнелері туралы деректерді толықтырған.</p><div class="tags"><span>Этнография</span><span>Археология</span></div></article>
+        <article class="rc reveal" data-era="xx"><div class="ini">ӘМ</div><span class="yr">XX ғ.</span><h4>Ә.Х. Марғұлан</h4><div class="life">1904–1985</div><div class="role">Археолог, академик</div><p>Қазақстан археологиясының негізін салушылардың бірі. Жетісудың тасқа салынған бейнелері мен ескерткіштерін кешенді түрде зерттеген.</p><div class="tags"><span>Археология</span><span>Тас бейнелері</span></div></article>
+        <article class="rc reveal" data-era="xx"><div class="ini">ФГ</div><span class="yr">XX ғ.</span><h4>Ф.П. Григорьев</h4><div class="role">Археолог</div><p>Іле аңғарындағы археологиялық ескерткіштерді зерттеп, Таңбалы тас маңындағы тарихи-мәдени ортаны сипаттауға үлес қосқан.</p><div class="tags"><span>Іле аңғары</span><span>Далалық зерттеу</span></div></article>
+        <article class="rc reveal" data-era="xx"><div class="ini">ИЕ</div><span class="yr">XX–XXI ғ.</span><h4>И.В. Ерофеева</h4><div class="role">Тарихшы, деректанушы</div><p>Жоңғар дәуірі мен Жетісудағы будда ескерткіштерінің тарихын зерттеп, Таңбалы тас жазуларының тарихи контекстін ашуға үлес қосқан.</p><div class="tags"><span>Деректану</span><span>Жоңғар дәуірі</span></div></article>
+        <article class="rc reveal" data-era="xxi"><div class="ini">АР</div><span class="yr">2008–10</span><h4>А.Е. Рогожинский</h4><div class="role">Археолог, петроглиф зерттеушісі</div><p>Жетісудың петроглифтерін құжаттау мен сақтау жобаларының жетекшілерінің бірі. Таңбалы тасты қайта тіркеп, жағдайын бағалаған.</p><div class="tags"><span>Петроглифтер</span><span>Сақтау</span><span>Құжаттау</span></div></article>
+        <article class="rc reveal" data-era="xxi"><div class="ini">БӘ</div><span class="yr">2008–10</span><h4>Б.Ж. Әубәкіров</h4><div class="role">Зерттеуші</div><p>Халықаралық зерттеу тобымен бірге Таңбалы тастағы бейнелер мен жазуларды жаңа әдістермен қайта құжаттауға қатысқан.</p><div class="tags"><span>Халықаралық жоба</span></div></article>
+        <article class="rc reveal" data-era="xxi"><div class="ini">DT</div><span class="yr">2026</span><h4>«Digital Tańbaly»</h4><div class="life">2026</div><div class="role">Цифрлық сақтау жобасы</div><p>Петроглифтерді фотосуретке түсіріп, координатасын белгілеп, цифрлық паспорт пен 3D модель арқылы болашақ ұрпаққа сақтауды мақсат етеді.</p><div class="tags"><span>Цифрлық архив</span><span>3D</span><span>ЖИ</span></div></article>
+      </div>
+      <p class="libnote reveal">Тізім толықтырылып отырады. Жаңа зерттеуші немесе еңбек туралы мәлімет болса, жобаға жіберіңіз.</p>
     </div>
   </section>
 
@@ -746,6 +794,12 @@ document.querySelectorAll('.card').forEach(c=>{
 });
 document.querySelector('.burger').onclick=()=>document.querySelector('.links').classList.toggle('open');
 document.querySelectorAll('.links a').forEach(a=>a.onclick=()=>document.querySelector('.links').classList.remove('open'));
+
+/* ---------- library filter ---------- */
+document.querySelectorAll('#libFilters button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#libFilters button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('#lib .rc').forEach(c=>{c.hidden=!(b.dataset.era==='all'||c.dataset.era===b.dataset.era);if(!c.hidden)c.classList.add('in');});
+});
 
 /* ---------- 3D carousel ---------- */
 const photos=[
